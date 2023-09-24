@@ -64,7 +64,7 @@ static int gettok() {
     if(last_char == EOF)
         return tok_eof;
     
-    return last_char;
+    return getchar();
 }
 
 //------------------------
@@ -140,12 +140,16 @@ namespace {
             std::unique_ptr<expr_AST> body)
             : proto(std::move(proto)), body(std::move(body)) {}
     };
-
 }
 
 //------------------------
 // Parser
 //------------------------
+
+static std::unique_ptr<expr_AST> parse_primary();
+
+static std::unique_ptr<expr_AST> parse_bin_op_rhs(int expr_prec,
+    std::unique_ptr<expr_AST> lhs);
 
 // cur_tok is a token buffer
 static int cur_tok;
@@ -158,7 +162,7 @@ static int get_next_token()
 // helper functions for error handling
 std::unique_ptr<expr_AST> log_error(const char *str)
 {
-    fprintf(stderr, "Error: %s\n");
+    fprintf(stderr, "Error: %s\n", str);
     return nullptr;
 }
 
@@ -355,6 +359,15 @@ static void handle_definition()
     }
 }
 
+static void handle_top_level_expression()
+{
+    if(parse_top_level_expr()) {
+        fprintf(stderr, "parsed a top-level expression.\n");
+    } else {
+        get_next_token();
+    }
+}
+
 static void handle_extern()
 {
     if(parse_extern()) {
@@ -364,14 +377,9 @@ static void handle_extern()
     }
 }
 
-static void handle_top_level_expression()
-{
-    if(parse_top_level_expr()) {
-        fprintf(stderr, "parsed a top-level expression.\n");
-    } else {
-        get_next_token();
-    }
-}
+//------------------------
+// Main Loop
+//------------------------
 
 static void main_loop()
 {
@@ -384,10 +392,13 @@ static void main_loop()
                 get_next_token();
                 break;
             case tok_def:
+                handle_definition();
                 break;
             case tok_extern:
+                handle_extern();
                 break;
             default:
+                handle_top_level_expression();
                 break;
         }
     }

@@ -1,1 +1,7 @@
+# Extension-less files
+*
+!/**/
+!*.*
+
+# VSCode Config
 .vscode/
